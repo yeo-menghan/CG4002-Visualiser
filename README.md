@@ -118,7 +118,7 @@ The game leverages **MQTT** for real-time communication between players. Key fea
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/yeo-menghan/unity-ar-laser-tag.git
-   cd visualizer
+   cd unity-ar-laser-tag
    ```
 2. Install Unity: Download and install Unity Hub and the required version of Unity.
 3. Vuforia Setup:
