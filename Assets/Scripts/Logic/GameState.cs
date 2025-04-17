@@ -47,7 +47,7 @@ public class GameState : MonoBehaviour
     private Transform worldCoordinateTransform;
 
     // Comms
-    private bool mqConnected, actionQueueConnected, statusUpdateConnected;
+    private bool mqConnected;
 
     // Events for property changes
     public event Action EnemyActiveChanged;
@@ -60,13 +60,8 @@ public class GameState : MonoBehaviour
     public event Action PlayerShieldHitEvent;
     public event Action EnemyHitEvent;
 
-    // UnityEvent for game actions
     public UnityActionEvent gameActionOccurred;
-
-    // UnityEvent for enemy game actions
     public UnityActionEvent enemyGameActionOccurred;
-
-    // Event to notify subscribers when device status changes
     public event Action OnDeviceStatusChanged;
 
 
@@ -130,17 +125,6 @@ public class GameState : MonoBehaviour
         set { mqConnected = value; }
     }
 
-    public bool ActionQueueConnected
-    {
-        get { return actionQueueConnected; }
-        set { actionQueueConnected = value; }
-    }
-
-    public bool StatusUpdateConnected
-    {
-        get { return statusUpdateConnected; }
-        set { statusUpdateConnected = value; }
-    }
 
     // =============================
     // Device Connection Methods
@@ -344,7 +328,6 @@ public class GameState : MonoBehaviour
         set { enemyInBombCount = Math.Clamp(value, 0, 999); }
     }
 
-    // TODO: Abstract this away into a separate class (snowChecker?)
     // Method to register a new bomb
     public int RegisterBomb(Vector3 position)
     {
@@ -387,16 +370,10 @@ public class GameState : MonoBehaviour
             float horizontalDistance = Vector2.Distance(enemyPosXZ, bombPosXZ);
             Debug.Log($"GameState: Enemy Horizontal Distance {horizontalDistance}");
 
-            // if (Vector3.Distance(enemyPosition, bombPosition) <= 1.0f)
-            // {
-            //     count++;
-            // }
 
             if (horizontalDistance <= horizontalThreshold)
             {
                 count++;
-                // Optional: Log which bomb is close
-                // Debug.Log($"GameState: Bomb at {bombPosition} is within horizontal distance {horizontalThreshold} of enemy at {enemyPosition}");
             }
         }
 
@@ -404,7 +381,6 @@ public class GameState : MonoBehaviour
         Debug.Log($"GameState: EnemyInBombCount - {EnemyInBombCount}");
     }
 
-    // If needed for debugging or game management
     public void ClearAllBombs()
     {
         activeEnemyBombs.Clear();
@@ -444,13 +420,13 @@ public class GameState : MonoBehaviour
         PlayerBulletCount = Mathf.Max(PlayerBulletCount - 1, MIN_BULLET_COUNT);
     }
 
-    public void PlayerReload() // Remove in production
+    public void PlayerReload()
     {
         PlayerBulletCount = MAX_BULLET_COUNT;
         HandleGameAction("Reload");
     }
 
-    public void EnemyReload() // Remove in production
+    public void EnemyReload()
     {
         EnemyBulletCount = MAX_BULLET_COUNT;
     }
@@ -473,16 +449,12 @@ public class GameState : MonoBehaviour
       Debug.Log($"Enemy game action occurred: {actionType}");
     }
 
-    // UnityEvent for game actions
     [System.Serializable]
     public class UnityActionEvent : UnityEvent<string> { }
 
-    // Method to be called by MQTTCommsManager when new status is received
     public void NotifyDeviceStatusChanged()
     {
         Debug.Log("GameState: Notifying subscribers of device status change.");
-        // Use the null-conditional operator ?. to safely invoke the event
-        // This checks if OnDeviceStatusChanged is not null before calling Invoke()
         OnDeviceStatusChanged?.Invoke();
     }
 

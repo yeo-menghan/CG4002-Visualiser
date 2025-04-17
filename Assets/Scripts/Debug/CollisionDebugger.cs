@@ -9,7 +9,6 @@ public class CollisionDebugger : MonoBehaviour
 
     private void Update()
     {
-        // Log all colliders in this hierarchy
         Collider[] colliders = GetComponentsInChildren<Collider>(true);
         Debug.Log($"Found {colliders.Length} colliders in the hierarchy of {gameObject.name}");
         foreach (Collider col in colliders)

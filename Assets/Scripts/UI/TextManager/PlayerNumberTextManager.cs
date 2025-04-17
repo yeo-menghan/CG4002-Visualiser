@@ -12,7 +12,6 @@ public class PlayerNumberTextManager : MonoBehaviour
 
     private void Awake()
     {
-        // Get components
         playerIdText = GetComponent<TextMeshProUGUI>();
 
         if (playerIdText == null)
@@ -23,7 +22,6 @@ public class PlayerNumberTextManager : MonoBehaviour
 
     private void Start()
     {
-        // Get GameState reference
         gameState = GameState.Instance;
 
         if (gameState == null)
@@ -32,13 +30,11 @@ public class PlayerNumberTextManager : MonoBehaviour
             return;
         }
 
-        // Update the text initially
         UpdatePlayerText();
     }
 
     private void Update()
     {
-        // Check for changes in PlayerID and update text
         UpdatePlayerText();
     }
 
@@ -47,7 +43,6 @@ public class PlayerNumberTextManager : MonoBehaviour
         if (playerIdText == null || gameState == null)
             return;
 
-        // Check if player is logged in (assuming PlayerID of 0 means not logged in)
         if (gameState.PlayerID <= 0)
         {
             playerIdText.text = noPlayerText;

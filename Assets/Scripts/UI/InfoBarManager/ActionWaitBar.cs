@@ -7,11 +7,10 @@ public class ActionWaitBar : MonoBehaviour
     private Slider actionSlider;
     private CanvasGroup canvasGroup;
     private GameState gameState;
-    private CanvasGroup crosshairCanvasGroup; // For controlling crosshair visibility via alpha
+    private CanvasGroup crosshairCanvasGroup;
     private bool isWaiting = false;
     public float waitDuration = 2f;
 
-    // Audio components
     public AudioSource audioSource;
     public AudioClip actionWaitSound;
     [Range(0f, 1f)]
@@ -32,7 +31,6 @@ public class ActionWaitBar : MonoBehaviour
             Debug.LogError("ActionWaitBar: CanvasGroup component not found!");
         }
 
-        // Initialize AudioSource if needed
         if (audioSource == null)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -41,7 +39,6 @@ public class ActionWaitBar : MonoBehaviour
             Debug.Log("ActionWaitBar: AudioSource component added.");
         }
 
-        // Find and initialize the crosshair's CanvasGroup
         GameObject crosshair = GameObject.Find("Crosshair");
         if (crosshair != null)
         {
@@ -65,7 +62,6 @@ public class ActionWaitBar : MonoBehaviour
         gameState = GameState.Instance;
     }
 
-    // Method to start the reload animation
     public void StartWait()
     {
         if (isWaiting)
@@ -83,8 +79,8 @@ public class ActionWaitBar : MonoBehaviour
     {
         isWaiting = true;
         SetVisibility(true);
-        actionSlider.value = 0; // Reset the slider value
-        SetCrosshairVisibility(false); // Show the crosshair
+        actionSlider.value = 0;
+        SetCrosshairVisibility(false);
         Debug.Log("ActionWaitBar: Crosshair set to active");
 
         if (actionWaitSound != null && audioSource != null)
@@ -99,11 +95,11 @@ public class ActionWaitBar : MonoBehaviour
         while (elapsedTime < waitDuration)
         {
             elapsedTime += Time.deltaTime;
-            actionSlider.value = Mathf.Clamp01(elapsedTime / waitDuration); // Update slider value
-            yield return null; // Wait for the next frame
+            actionSlider.value = Mathf.Clamp01(elapsedTime / waitDuration);
+            yield return null;
         }
 
-        actionSlider.value = 1; // Ensure the slider is full
+        actionSlider.value = 1;
 
         SetVisibility(false);
         SetCrosshairVisibility(true);
@@ -111,7 +107,6 @@ public class ActionWaitBar : MonoBehaviour
         isWaiting = false;
     }
 
-    // Simple helper method to control visibility using the CanvasGroup
     private void SetVisibility(bool visible)
     {
         canvasGroup.alpha = visible ? 1f : 0f;

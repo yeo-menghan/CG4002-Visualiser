@@ -8,10 +8,8 @@ public class PlayerInBombCountDisplay : MonoBehaviour
 
     void Awake()
     {
-        // Get the TextMeshProUGUI component on this GameObject
         textDisplay = GetComponent<TextMeshProUGUI>();
 
-        // Find the GameState instance in the scene
         gameState = GameState.Instance;
 
         if (gameState == null)
@@ -27,13 +25,11 @@ public class PlayerInBombCountDisplay : MonoBehaviour
 
     void Start()
     {
-        // Initialize the text
         UpdateText();
     }
 
     void Update()
     {
-        // Update the text every frame to reflect current value
         UpdateText();
     }
 
@@ -41,7 +37,6 @@ public class PlayerInBombCountDisplay : MonoBehaviour
     {
         if (gameState != null && textDisplay != null)
         {
-            // Display the enemy in bomb count
             textDisplay.text = $"Player in Bomb: {gameState.PlayerInBombCount}";
         }
     }

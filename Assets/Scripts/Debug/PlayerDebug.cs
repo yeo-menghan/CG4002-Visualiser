@@ -10,10 +10,6 @@ public class PlayerDebug : MonoBehaviour
         gameState = GameState.Instance;
     }
 
-    // =============================
-    // Shoot / Bomb / Shield
-    // =============================
-
     public void Reload()
     {
         gameState.HandleGameAction("reload");

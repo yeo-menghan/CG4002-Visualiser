@@ -8,7 +8,6 @@ using TMPro;
 
 public class MQTTCommsManager : M2MqttUnityClient
 {
-    // Singleton pattern
     public static MQTTCommsManager Instance { get; private set; }
 
     [Header("MQTT Settings")]
@@ -16,13 +15,10 @@ public class MQTTCommsManager : M2MqttUnityClient
     [SerializeField] private string mqttVisibilityCheck = "visualiser/visibility_feedback"; // Publish
     [SerializeField] private string mqttVisibilityRequest = "visualiser/req_visibility"; // Subscribe to Server pings
     [SerializeField] private string mqttDeviceStatusTopic = "visualiser/device_status"; // Subscribe (Device connection status)
-    // [SerializeField] private string mqttPingAlertTopic = "visualiser/ping";
-    // [SerializeField] private float pingInterval = 5.0f;
 
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI deviceDisconnectPromptText;
 
-    // Data structures from CommsManager
     [Serializable]
     public class PlayerState
     {
@@ -43,14 +39,6 @@ public class MQTTCommsManager : M2MqttUnityClient
         public PlayerState p1;
         public PlayerState p2;
     }
-
-    // [Serializable]
-    // private class PingMessage
-    // {
-    //     public string status = "alive";
-    //     public int player_id;
-    //     public long timestamp; // Add timestamp for extra info
-    // }
 
     [Serializable]
     public class GameStateMessage
@@ -98,10 +86,8 @@ public class MQTTCommsManager : M2MqttUnityClient
     private PlayerState previousLocalPlayerState = new PlayerState();
     private PlayerState previousEnemyPlayerState = new PlayerState();
 
-    // Awake is called before Start
     private void Awake()
     {
-        // Singleton implementation
         if (Instance == null)
         {
             Instance = this;
@@ -113,7 +99,6 @@ public class MQTTCommsManager : M2MqttUnityClient
         }
     }
 
-    // Start is called before the first frame update
     protected override void Start()
     {
         try {
@@ -137,16 +122,13 @@ public class MQTTCommsManager : M2MqttUnityClient
 
         gameState = GameState.Instance;
 
-        // Call base Start() which will handle the connection
         base.Start();
     }
 
-    // Update is called once per frame
     protected override void Update()
     {
-        base.Update(); // Call base method to process MQTT events
+        base.Update();
 
-        // Process any messages in the queue
         if (messageQueue.Count > 0)
         {
             foreach (string message in messageQueue)
@@ -155,16 +137,10 @@ public class MQTTCommsManager : M2MqttUnityClient
             }
             messageQueue.Clear();
         }
-
-        // No need to check for state changes here anymore since we're using the event
-
-
     }
 
-    // Override the Connect method with the same access modifier as the parent class
     public override void Connect()
     {
-        // Check network availability before trying to connect
         if (!IsNetworkAvailable())
         {
             OnConnectionFailed("No internet connection available");
@@ -175,7 +151,7 @@ public class MQTTCommsManager : M2MqttUnityClient
 
         try
         {
-            base.Connect(); // Call the parent's Connect method
+            base.Connect();
         }
         catch (Exception e)
         {
@@ -189,7 +165,6 @@ public class MQTTCommsManager : M2MqttUnityClient
         }
     }
 
-    // Keep this helper method
     private bool IsNetworkAvailable()
     {
         if (Application.internetReachability == NetworkReachability.NotReachable)
@@ -200,7 +175,6 @@ public class MQTTCommsManager : M2MqttUnityClient
         return true;
     }
 
-    // Called when connected to broker
     protected override void OnConnected()
     {
         base.OnConnected();
@@ -210,18 +184,15 @@ public class MQTTCommsManager : M2MqttUnityClient
 
     }
 
-    // Subscribe to topics
     protected override void SubscribeTopics()
     {
 
-        // List of topics to subscribe to
         string[] topics = new string[] {
             mqttGameStateTopic,
             mqttVisibilityRequest,
-            mqttDeviceStatusTopic // Add the new device status topic
+            mqttDeviceStatusTopic
         };
 
-        // Corresponding Quality of Service levels
         byte[] qosLevels = new byte[] {
             MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE, // QOS for game state/actions
             MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE, // QOS for visibility requests
@@ -230,44 +201,39 @@ public class MQTTCommsManager : M2MqttUnityClient
 
         client.Subscribe(topics, qosLevels);
         Debug.Log("Subscribed to topics: " + string.Join(", ", topics));
-        // Debug.Log("Subscribed to topics: " + mqttGameStateTopic + ", " + mqttVisibilityRequest);
     }
 
-    // Unsubscribe (good practice)
     protected override void UnsubscribeTopics()
     {
         if (client != null && client.IsConnected)
         {
-             string[] topics = new string[] {
+            string[] topics = new string[] {
                 mqttGameStateTopic,
                 mqttVisibilityRequest,
                 mqttDeviceStatusTopic
             };
-             Debug.Log("Unsubscribing from topics: " + string.Join(", ", topics));
-             client.Unsubscribe(topics);
+            Debug.Log("Unsubscribing from topics: " + string.Join(", ", topics));
+            client.Unsubscribe(topics);
         }
     }
 
-    // Process messages received from the broker
     protected override void DecodeMessage(string topic, byte[] message)
     {
         string msg = System.Text.Encoding.UTF8.GetString(message);
-        // Route message based on topic
         if (topic == mqttVisibilityRequest)
         {
-            ProcessVisibilityRequest(msg); // Process immediately
+            ProcessVisibilityRequest(msg);
         }
         else if (topic == mqttDeviceStatusTopic)
         {
-            ProcessDeviceStatusMessage(msg); // Process immediately
+            ProcessDeviceStatusMessage(msg);
         }
         else if (topic == mqttGameStateTopic)
         {
-            // Queue game state and action messages for processing in the main thread Update loop
-             lock(messageQueue) // Ensure thread safety when adding to the queue
-             {
+            lock(messageQueue)
+            {
                 messageQueue.Add(msg);
-             }
+            }
         }
         else
         {
@@ -275,7 +241,6 @@ public class MQTTCommsManager : M2MqttUnityClient
         }
     }
 
-    // Process visibility request pings
     private void ProcessVisibilityRequest(string message)
     {
         Debug.Log("Processing visibility request: " + message);
@@ -284,10 +249,8 @@ public class MQTTCommsManager : M2MqttUnityClient
         {
             VisibilityRequestMessage requestMsg = JsonUtility.FromJson<VisibilityRequestMessage>(message);
 
-            // Check if this request is for the current player
             if (requestMsg.player_id == gameState.PlayerID)
             {
-                // Server is requesting our current visibility state, so send it
                 SendPlayerVisibilityMessage();
             }
         }
@@ -298,7 +261,6 @@ public class MQTTCommsManager : M2MqttUnityClient
     }
 
 
-    // Process device status messages (immediate)
     private void ProcessDeviceStatusMessage(string message)
     {
         Debug.Log("Processing device status message: " + message);
@@ -309,44 +271,37 @@ public class MQTTCommsManager : M2MqttUnityClient
 
             if (statusMsg != null && statusMsg.player_1 != null && statusMsg.player_2 != null)
             {
-                bool changed = false; // Track if any status actually changed
+                bool changed = false;
 
-                // Determine which player data corresponds to the local player
                 PlayerDeviceStatus localPlayerStatus = (gameState.PlayerID == 1) ? statusMsg.player_1 : statusMsg.player_2;
                 PlayerDeviceStatus remotePlayerStatus = (gameState.PlayerID == 1) ? statusMsg.player_2 : statusMsg.player_1; // Not strictly needed for this feature, but good for context
 
-                // --- Update GameState Properties (as before) ---
-                // Player 1
                 if (gameState.P1_gun != statusMsg.player_1.gun_connected) { gameState.P1_gun = statusMsg.player_1.gun_connected; changed = true; }
                 if (gameState.P1_vest != statusMsg.player_1.vest_connected) { gameState.P1_vest = statusMsg.player_1.vest_connected; changed = true; }
                 if (gameState.P1_glove != statusMsg.player_1.glove_connected) { gameState.P1_glove = statusMsg.player_1.glove_connected; changed = true; }
-                // Player 2
                 if (gameState.P2_gun != statusMsg.player_2.gun_connected) { gameState.P2_gun = statusMsg.player_2.gun_connected; changed = true; }
                 if (gameState.P2_vest != statusMsg.player_2.vest_connected) { gameState.P2_vest = statusMsg.player_2.vest_connected; changed = true; }
                 if (gameState.P2_glove != statusMsg.player_2.glove_connected) { gameState.P2_glove = statusMsg.player_2.glove_connected; changed = true; }
 
 
-                // --- Check Local Player Device Status for Prompt ---
                 if (deviceDisconnectPromptText != null)
                 {
-                    // Check if ALL local player devices are disconnected
                     bool allLocalDevicesDisconnected = !localPlayerStatus.gun_connected &&
                                                         !localPlayerStatus.vest_connected &&
                                                         !localPlayerStatus.glove_connected;
 
-                    // Activate/Deactivate the prompt based on the check
                     if (allLocalDevicesDisconnected)
                     {
-                         if (!deviceDisconnectPromptText.gameObject.activeSelf) // Only activate if not already active
-                         {
-                            deviceDisconnectPromptText.text = $"Please scan the ground QR code"; // Set specific text
+                         if (!deviceDisconnectPromptText.gameObject.activeSelf)
+                        {
+                            deviceDisconnectPromptText.text = $"Please scan the ground QR code";
                             deviceDisconnectPromptText.gameObject.SetActive(true);
                             Debug.Log($"Player {gameState.PlayerID} all devices disconnected, showing prompt.");
-                         }
+                        }
                     }
                     else
                     {
-                        if (deviceDisconnectPromptText.gameObject.activeSelf) // Only deactivate if currently active
+                        if (deviceDisconnectPromptText.gameObject.activeSelf)
                         {
                             deviceDisconnectPromptText.gameObject.SetActive(false);
                             Debug.Log($"Player {gameState.PlayerID} has connected devices, hiding prompt.");
@@ -355,15 +310,12 @@ public class MQTTCommsManager : M2MqttUnityClient
                 }
                 else
                 {
-                     // Log warning only once maybe, or less frequently if needed
-                     // Debug.LogWarning("deviceDisconnectPromptText not assigned, cannot show device status prompt.");
+                    Debug.LogWarning("deviceDisconnectPromptText not assigned, cannot show device status prompt.");
                 }
 
 
-                // Log the updated status after potential changes (as before)
                 Debug.Log($"Updated device status: P1(G:{gameState.P1_gun}, V:{gameState.P1_vest}, Gl:{gameState.P1_glove}), P2(G:{gameState.P2_gun}, V:{gameState.P2_vest}, Gl:{gameState.P2_glove})");
 
-                // Notify subscribers *only if* something actually changed (as before)
                 if (changed)
                 {
                     gameState.NotifyDeviceStatusChanged();
@@ -380,14 +332,12 @@ public class MQTTCommsManager : M2MqttUnityClient
         }
     }
 
-    // Process received messages
     private void ProcessMessage(string message)
     {
         Debug.Log("Processing MQTT message: " + message);
 
         try
         {
-            // Try to parse as action message first
             ActionMessage actionMsg = JsonUtility.FromJson<ActionMessage>(message);
 
             if (!string.IsNullOrEmpty(actionMsg.action))
@@ -404,7 +354,6 @@ public class MQTTCommsManager : M2MqttUnityClient
 
         try
         {
-            // Try to parse as game state message
             GameStateMessage stateMsg = JsonUtility.FromJson<GameStateMessage>(message);
 
             if (stateMsg.game_state != null)
@@ -420,27 +369,20 @@ public class MQTTCommsManager : M2MqttUnityClient
         }
     }
 
-    // Process action messages
     private void ProcessActionMessage(ActionMessage actionMsg)
     {
-        // Determine if this is a message from the opponent
         bool isFromOpponent = actionMsg.player_id != gameState.PlayerID;
         Debug.Log($"MQTTCommsManager actionMsg.hit: {actionMsg.hit}");
 
-        // Handle hit animations generically based on the hit flag
         if (actionMsg.hit == "true")
         {
             if (isFromOpponent)
             {
-                // Opponent hit this player (either shield or HP)
-                // Trigger a generic player hit animation
                 gameState.PlayerHit = true;
                 Debug.Log("Generic player hit animation triggered");
             }
             else
             {
-                // Local player hit the opponent (either shield or HP)
-                // Trigger a generic enemy hit animation
                 gameState.EnemyHit = true;
                 Debug.Log("Generic enemy hit animation triggered");
             }
@@ -459,25 +401,21 @@ public class MQTTCommsManager : M2MqttUnityClient
 
         if (isFromOpponent)
         {
-            // If the opponent performed an action, trigger it in the game
             gameState.HandleEnemyGameAction(actionMsg.action);
             Debug.Log($"Enemy action '{actionMsg.action}' handled");
         }
         else
         {
-            // This is a confirmation of the local player's action
             gameState.HandleGameAction(actionMsg.action);
             Debug.Log($"Local player action '{actionMsg.action}' handled");
         }
 
-        // Update game state from the provided state data
         if (actionMsg.game_state != null)
         {
             ProcessGameStateMessage(actionMsg.game_state);
         }
     }
 
-    // Process game state data
     private void ProcessGameStateMessage(GameStateData stateData)
     {
         if (stateData == null)
@@ -486,7 +424,6 @@ public class MQTTCommsManager : M2MqttUnityClient
         PlayerState localPlayerState = gameState.PlayerID == 1 ? stateData.p1 : stateData.p2;
         PlayerState enemyPlayerState = gameState.PlayerID == 1 ? stateData.p2 : stateData.p1;
 
-        // Update local player state
         if (localPlayerState != null)
         {
             gameState.PlayerCurrentHealth = localPlayerState.hp;
@@ -496,20 +433,17 @@ public class MQTTCommsManager : M2MqttUnityClient
             gameState.PlayerScore = enemyPlayerState.deaths;
             gameState.PlayerShieldCount = localPlayerState.shields;
 
-            // Handle login status
             if (localPlayerState.login)
             {
                 Debug.Log("Local player logged in");
             }
 
-            // Handle disconnection
             if (localPlayerState.disconnected)
             {
                 Debug.Log("Local player disconnected");
             }
         }
 
-        // Update enemy player state
         if (enemyPlayerState != null)
         {
             gameState.EnemyCurrentHealth = enemyPlayerState.hp;
@@ -521,12 +455,10 @@ public class MQTTCommsManager : M2MqttUnityClient
         }
     }
 
-    // Send player visibility message to the visibility feedback channel
     public void SendPlayerVisibilityMessage()
     {
         if (client != null && client.IsConnected)
         {
-            // But JsonUtility can't serialize anonymous types, so we'll create a proper string
             string jsonMessage = $"{{\"player_id\": {gameState.PlayerID}, \"is_visible\": \"{gameState.EnemyActive.ToString().ToLower()}\", \"bombs_on_player\": {gameState.EnemyInBombCount}}}";
 
             client.Publish(mqttVisibilityCheck, System.Text.Encoding.UTF8.GetBytes(jsonMessage), MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE, false);
@@ -538,14 +470,12 @@ public class MQTTCommsManager : M2MqttUnityClient
         }
     }
 
-    // Handle connection failure
     protected override void OnConnectionFailed(string errorMessage)
     {
         Debug.LogError("Connection failed: " + errorMessage);
         gameState.MqConnected = false;
     }
 
-    // Handle disconnection
     protected override void OnDisconnected()
     {
         Debug.Log("Disconnected from broker");
@@ -553,7 +483,6 @@ public class MQTTCommsManager : M2MqttUnityClient
         gameState.MqConnected = false;
     }
 
-    // Clean up when the application quits
     private void OnApplicationQuit()
     {
         Disconnect();

@@ -1,10 +1,9 @@
 using UnityEngine;
-using UnityEngine.UI; // Import the UI namespace for Image and Sprite
+using UnityEngine.UI;
 
 public class DeviceStatusManager : MonoBehaviour
 {
     [Header("UI Image References")]
-    // Change the type from TextMeshProUGUI to Image
     [SerializeField] private Image p1GloveStatusImage;
     [SerializeField] private Image p1VestStatusImage;
     [SerializeField] private Image p1GunStatusImage;
@@ -13,11 +12,8 @@ public class DeviceStatusManager : MonoBehaviour
     [SerializeField] private Image p2GunStatusImage;
 
     [Header("Status Display Sprites & Options")]
-    [SerializeField] private Sprite connectedSprite;    // Assign your Tick Sprite here in the Inspector
-    [SerializeField] private Sprite disconnectedSprite; // Assign your Cross Sprite here in the Inspector
-    [SerializeField] private Color connectedColor = Color.green; // Optional: Tint for the connected sprite
-    [SerializeField] private Color disconnectedColor = Color.red;   // Optional: Tint for the disconnected sprite
-    // You can set these colors to Color.white if your sprites already have the desired colors
+    [SerializeField] private Sprite connectedSprite;
+    [SerializeField] private Sprite disconnectedSprite;
 
     private GameState gameState;
 
@@ -35,9 +31,9 @@ public class DeviceStatusManager : MonoBehaviour
     {
         if (gameState != null)
         {
-            gameState.OnDeviceStatusChanged += UpdateDeviceStatusImages; // Renamed handler
+            gameState.OnDeviceStatusChanged += UpdateDeviceStatusImages;
             Debug.Log("DeviceStatusManager subscribed to OnDeviceStatusChanged.");
-            UpdateDeviceStatusImages(); // Update immediately on enable
+            UpdateDeviceStatusImages();
         }
         else
         {
@@ -49,15 +45,14 @@ public class DeviceStatusManager : MonoBehaviour
     {
         if (gameState != null)
         {
-            gameState.OnDeviceStatusChanged -= UpdateDeviceStatusImages; // Renamed handler
+            gameState.OnDeviceStatusChanged -= UpdateDeviceStatusImages;
             Debug.Log("DeviceStatusManager unsubscribed from OnDeviceStatusChanged.");
         }
     }
 
-    // Method called by the event or on enable
-    private void UpdateDeviceStatusImages() // Renamed method
+    private void UpdateDeviceStatusImages()
     {
-        Debug.Log("DeviceStatusManager: Updating device status images."); // Updated log message
+        Debug.Log("DeviceStatusManager: Updating device status images.");
         if (gameState == null)
         {
             Debug.LogError("GameState instance not found. Cannot update UI.");
@@ -67,7 +62,7 @@ public class DeviceStatusManager : MonoBehaviour
         if (connectedSprite == null || disconnectedSprite == null)
         {
             Debug.LogError("Connected or Disconnected Sprite is not assigned in the DeviceStatusManager Inspector!");
-            return; // Can't update without sprites
+            return;
         }
 
         // Update Player 1 Images
@@ -81,25 +76,15 @@ public class DeviceStatusManager : MonoBehaviour
         UpdateSingleImage(p2GloveStatusImage, gameState.P2_glove);
     }
 
-    // Helper method to update a single Image element
-    // Change the parameter type from TextMeshProUGUI to Image
     private void UpdateSingleImage(Image imageElement, bool isConnected)
     {
         if (imageElement != null)
         {
-            // Assign the correct sprite based on connection status
             imageElement.sprite = isConnected ? connectedSprite : disconnectedSprite;
-
-            // Assign the corresponding color tint
-            // imageElement.color = isConnected ? connectedColor : disconnectedColor;
-
-            // Ensure the image component is enabled (it might be disabled if sprites were missing previously)
             imageElement.enabled = true;
         }
         else
         {
-            // Log a warning if a specific Image component is missing
-            // (Use a more specific message if possible, e.g., by passing the name)
             Debug.LogWarning($"UI Image element is not assigned in the inspector slot for DeviceStatusManager.");
         }
     }

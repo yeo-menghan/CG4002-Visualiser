@@ -15,7 +15,6 @@ public class LogoutManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Unsubscribe to prevent memory leaks
         if (gameState != null)
         {
             gameState.gameActionOccurred.RemoveListener(OnGameActionOccurred);
@@ -32,7 +31,6 @@ public class LogoutManager : MonoBehaviour
 
     private IEnumerator DelayedLogout()
     {
-        // Wait for 4 seconds
         yield return new WaitForSeconds(6f);
 
         // Execute logout

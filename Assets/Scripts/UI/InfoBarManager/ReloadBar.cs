@@ -10,7 +10,6 @@ public class ReloadBar : MonoBehaviour
     private bool isReloading = false;
     public float reloadDuration = 2f;
 
-    // Audio components
     public AudioSource audioSource;
     public AudioClip reloadStartSound;
     [Range(0f, 1f)]
@@ -31,7 +30,6 @@ public class ReloadBar : MonoBehaviour
             Debug.LogError("ReloadBar: CanvasGroup component not found!");
         }
 
-        // Initialize AudioSource if needed
         if (audioSource == null)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -40,7 +38,6 @@ public class ReloadBar : MonoBehaviour
             Debug.Log("ReloadBar: AudioSource component added.");
         }
 
-        // Hide the reload bar without deactivating it
         SetVisibility(false);
     }
 
@@ -72,7 +69,6 @@ public class ReloadBar : MonoBehaviour
         }
     }
 
-    // Method to start the reload animation
     public void StartReload()
     {
         if (isReloading)
@@ -89,9 +85,8 @@ public class ReloadBar : MonoBehaviour
     {
         isReloading = true;
         SetVisibility(true);
-        reloadSlider.value = 0; // Reset the slider value
+        reloadSlider.value = 0;
 
-        // Play reload start sound
         if (reloadStartSound != null && audioSource != null)
         {
             audioSource.clip = reloadStartSound;
@@ -104,17 +99,16 @@ public class ReloadBar : MonoBehaviour
         while (elapsedTime < reloadDuration)
         {
             elapsedTime += Time.deltaTime;
-            reloadSlider.value = Mathf.Clamp01(elapsedTime / reloadDuration); // Update slider value
-            yield return null; // Wait for the next frame
+            reloadSlider.value = Mathf.Clamp01(elapsedTime / reloadDuration);
+            yield return null;
         }
 
-        reloadSlider.value = 1; // Ensure the slider is full
+        reloadSlider.value = 1;
 
         SetVisibility(false);
         isReloading = false;
     }
 
-    // Simple helper method to control visibility using the CanvasGroup
     private void SetVisibility(bool visible)
     {
         canvasGroup.alpha = visible ? 1f : 0f;
