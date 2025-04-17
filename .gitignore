@@ -75,7 +75,6 @@ crashlytics-build.properties
 
 # Ignore personal files and specific directories
 /Packages/
-/Assets/Audio/
 /Assets/Custom Material/
 /Assets/Prefabs/
 /Assets/Imports/

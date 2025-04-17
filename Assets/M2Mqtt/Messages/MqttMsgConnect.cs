@@ -3,11 +3,11 @@ Copyright (c) 2013, 2014 Paolo Patierno
 
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License v1.0
-and Eclipse Distribution License v1.0 which accompany this distribution. 
+and Eclipse Distribution License v1.0 which accompany this distribution.
 
-The Eclipse Public License is available at 
+The Eclipse Public License is available at
    http://www.eclipse.org/legal/epl-v10.html
-and the Eclipse Distribution License is available at 
+and the Eclipse Distribution License is available at
    http://www.eclipse.org/org/documents/edl-v10.php.
 
 Contributors:
@@ -30,7 +30,7 @@ namespace uPLibrary.Networking.M2Mqtt.Messages
         // protocol name supported
         internal const string PROTOCOL_NAME_V3_1 = "MQIsdp";
         internal const string PROTOCOL_NAME_V3_1_1 = "MQTT"; // [v.3.1.1]
-        
+
         // max length for client id (removed in 3.1.1)
         internal const int CLIENT_ID_MAX_LENGTH = 23;
 
@@ -44,7 +44,7 @@ namespace uPLibrary.Networking.M2Mqtt.Messages
 
         internal const byte PROTOCOL_VERSION_V3_1 = 0x03;
         internal const byte PROTOCOL_VERSION_V3_1_1 = 0x04; // [v.3.1.1]
-        internal const ushort KEEP_ALIVE_PERIOD_DEFAULT = 60; // seconds
+        internal const ushort KEEP_ALIVE_PERIOD_DEFAULT = 600; // seconds
         internal const ushort MAX_KEEP_ALIVE = 65535; // 16 bit
 
         // connect flags
@@ -209,7 +209,7 @@ namespace uPLibrary.Networking.M2Mqtt.Messages
         private bool cleanSession;
         // keep alive period (in sec)
         private ushort keepAlivePeriod;
-        
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -241,8 +241,8 @@ namespace uPLibrary.Networking.M2Mqtt.Messages
         /// <param name="cleanSession">Clean sessione flag</param>
         /// <param name="keepAlivePeriod">Keep alive period</param>
         /// <param name="protocolVersion">Protocol version</param>
-        public MqttMsgConnect(string clientId, 
-            string username, 
+        public MqttMsgConnect(string clientId,
+            string username,
             string password,
             bool willRetain,
             byte willQosLevel,
@@ -297,7 +297,7 @@ namespace uPLibrary.Networking.M2Mqtt.Messages
             int passwordUtf8Length;
             byte[] passwordUtf8;
             MqttMsgConnect msg = new MqttMsgConnect();
-            
+
             // get remaining length and allocate buffer
             int remainingLength = MqttMsgBase.decodeRemainingLength(channel);
             buffer = new byte[remainingLength];
@@ -414,13 +414,13 @@ namespace uPLibrary.Networking.M2Mqtt.Messages
                 // will flag set, will topic and will message MUST be present
                 if (this.willFlag &&  ((this.willQosLevel >= 0x03) ||
                                        (willTopicUtf8 == null) || (willMessageUtf8 == null) ||
-                                       ((willTopicUtf8 != null) && (willTopicUtf8.Length == 0)) || 
+                                       ((willTopicUtf8 != null) && (willTopicUtf8.Length == 0)) ||
                                        ((willMessageUtf8 != null) && (willMessageUtf8.Length == 0))))
                     throw new MqttClientException(MqttClientErrorCode.WillWrong);
                 // willflag not set, retain must be 0 and will topic and message MUST NOT be present
                 else if (!this.willFlag && ((this.willRetain) ||
                                             (willTopicUtf8 != null) || (willMessageUtf8 != null) ||
-                                            ((willTopicUtf8 != null) && (willTopicUtf8.Length != 0)) || 
+                                            ((willTopicUtf8 != null) && (willTopicUtf8.Length != 0)) ||
                                             ((willMessageUtf8 != null) && (willMessageUtf8.Length != 0))))
                     throw new MqttClientException(MqttClientErrorCode.WillWrong);
             }
@@ -505,7 +505,7 @@ namespace uPLibrary.Networking.M2Mqtt.Messages
                 // protocol version
                 buffer[index++] = PROTOCOL_VERSION_V3_1_1;
             }
-            
+
             // connect flags
             byte connectFlags = 0x00;
             connectFlags |= (usernameUtf8 != null) ? (byte)(1 << USERNAME_FLAG_OFFSET) : (byte)0x00;
