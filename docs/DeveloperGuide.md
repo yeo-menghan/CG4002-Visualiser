@@ -158,7 +158,7 @@ NOTE: in the current implementation, there's a `KEEP_ALIVE_PERIOD_DEFAULT` under
   Example of "gun" action
   ```json
   {
-    "player_id": 1 or 2,
+    "player_id": 1,
     "action": "gun",
     "hit": true,
     "game_state": {
@@ -230,7 +230,7 @@ All action moves are coded in C#, allowing greater customisability for those who
 
 Each move has their audio files too.
 
-<div align="center">
+<div align="left">
 
 <table>
   <thead>
