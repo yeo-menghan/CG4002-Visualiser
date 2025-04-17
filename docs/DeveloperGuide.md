@@ -141,25 +141,25 @@ NOTE: in the current implementation, there's a `KEEP_ALIVE_PERIOD_DEFAULT` under
 - `visualiser/req_visibility`: Subscribes to External Communications request for Visualizer's visibility
   ```json
   {
-    "player_id": 1/2,
+    "player_id": 1,
     "topic": "visualiser/req_visibility"
   }
   ```
 - `visualiser/visibility_feedback`: Publishes Player's visibility on the opposing player as well as the number of bombs the opposing player is standing on
   ```json
   {
-    "player_id": 1/2,
-    "is_visible": "true"/"false",
-    "bombs_on_player": <int>
+    "player_id": 1,
+    "is_visible": "true",
+    "bombs_on_player": 2
   }
   ```
 - `visualiser/game_state`: Subscribes to External Communications' gamestate and update visual components / trigger game actions
 
-  Example of game action
+  Example of "gun" action
   ```json
   {
-    "player_id": 1/2,
-    "action": <string>,
+    "player_id": 1 or 2,
+    "action": "gun",
     "hit": true,
     "game_state": {
       "p1": {
@@ -189,14 +189,14 @@ NOTE: in the current implementation, there's a `KEEP_ALIVE_PERIOD_DEFAULT` under
   ```json
   {
     "player_1": {
-      "gun_connected": true / false,
-      "vest_connected": true / false,
-      "glove_connected": true / false
+      "gun_connected": true,
+      "vest_connected": true,
+      "glove_connected": true
     },
     "player_2": {
-      "gun_connected": true / false,
-      "vest_connected": true / false,
-      "glove_connected": true / false
+      "gun_connected": true,
+      "vest_connected": true,
+      "glove_connected": true
     }
   }
   ```
@@ -229,18 +229,6 @@ Responsibilities:
 All action moves are coded in C#, allowing greater customisability for those who do not know how to animate in Unity.
 
 Each move has their audio files too.
-
-| **Action Move** | **Preview**                |
-|:--------------- |:--------------------------|
-| Shield          | <img src="../PublicImages/shield.gif" alt="Reload" width="500">  |
-| Gun             | <img src="../PublicImages/gun.gif" alt="Reload" width="500">  |
-| Bomb            | <img src="../PublicImages/bomb.gif" alt="Reload" width="500">  |
-| Golf            | <img src="../PublicImages/golf.gif" alt="Reload" width="500">  |
-| Badminton       | <img src="../PublicImages/badminton.gif" alt="Reload" width="500">  |
-| Fencing         | <img src="../PublicImages/fencing.gif" alt="Reload" width="500">  |
-| Boxing          | <img src="../PublicImages/boxing.gif" alt="Reload" width="500"> |
-| Reload          | <img src="../PublicImages/reload.gif" alt="Reload" width="500"> |
-| Logout          | <img src="../PublicImages/logout.gif" alt="Reload" width="500"> |
 
 <div align="center">
 
