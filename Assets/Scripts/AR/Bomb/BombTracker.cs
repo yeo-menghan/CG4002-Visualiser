@@ -11,7 +11,6 @@ public class BombTracker : MonoBehaviour
         bombId = id;
     }
 
-    // Only needed if bombs can move
     private void Update()
     {
         if (gameState != null)

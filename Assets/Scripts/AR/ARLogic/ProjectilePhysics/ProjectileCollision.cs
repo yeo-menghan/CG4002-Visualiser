@@ -9,7 +9,6 @@ public class ProjectileCollision : MonoBehaviour
 
     void Start()
     {
-        // Schedule destruction after 2 seconds
         Invoke(nameof(DestroyProjectile), 2f);
         Debug.Log("ProjectileCollision: Projectile will self-destruct in 2 seconds if no collisions occur.");
     }
@@ -22,7 +21,6 @@ public class ProjectileCollision : MonoBehaviour
         Debug.Log($"ProjectileCollision: My tag is looking for: {targetTag}");
         Debug.Log($"ProjectileCollision: Checking tag match: {collision.gameObject.CompareTag(targetTag)}");
 
-        // Debug all collider pairs involved in this collision
         foreach (ContactPoint contact in collision.contacts)
         {
             Debug.Log($"ProjectileCollision: Contact between: {contact.thisCollider.name} and {contact.otherCollider.name}");

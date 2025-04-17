@@ -50,7 +50,7 @@ public class GameState : MonoBehaviour
     private bool mqConnected, actionQueueConnected, statusUpdateConnected;
 
     // Events for property changes
-    public event Action EnemyActiveChanged; // Enemy Visibility
+    public event Action EnemyActiveChanged;
 
     // Device Connection
     private bool p1_glove, p2_glove, p1_vest, p2_vest, p1_gun, p2_gun;

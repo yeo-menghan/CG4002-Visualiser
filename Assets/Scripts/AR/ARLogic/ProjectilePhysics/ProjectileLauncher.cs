@@ -22,37 +22,29 @@ public class ProjectileSettings
     [Header("Targeting Parameters")]
     public string targetTag = "Target";
 
-    [Header("Left Hand Throw Settings")]
-    public Vector3 leftHandOffset = new Vector3(-0.3f, -0.4f, 0.2f); // Left, down, and slightly forward
-
     [Header("Audio Settings")]
-    public AudioClip launchSound; // Sound to play when projectile is launched
-
-    // [Header("Action Wait")]
-    // public GameObject ActionWaitBar;
+    public AudioClip launchSound;
 }
 
 public class ProjectileLauncher : MonoBehaviour
 {
     [Header("Projectile Settings")]
-    public List<ProjectileSettings> projectileList = new List<ProjectileSettings>(); // Assign projectiles in Inspector
+    public List<ProjectileSettings> projectileList = new List<ProjectileSettings>();
     private Dictionary<string, ProjectileSettings> projectilesDictionary = new Dictionary<string, ProjectileSettings>();
 
     [Header("Cooldown Settings")]
-    public float launchInterval = 0.5f;  // Delay between launches
+    public float launchInterval = 0.5f;
     private bool isReadyToLaunch = true;
 
     [Header("Audio Settings")]
-    public AudioSource audioSource; // Audio source for playing sounds
-    public AudioClip defaultLaunchSound; // Default launch sound if none specified in projectile settings
-
+    public AudioSource audioSource;
+    public AudioClip defaultLaunchSound;
     private GameObject activeProjectile;
     private Coroutine guidanceCoroutine;
     private GameState gameState;
 
     void Awake()
     {
-        // Map projectiles from list to dictionary
         foreach (var projectile in projectileList)
         {
             if (!projectilesDictionary.ContainsKey(projectile.projectileType))
@@ -61,7 +53,6 @@ public class ProjectileLauncher : MonoBehaviour
             }
         }
 
-        // Create audio source if not assigned
         if (audioSource == null)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -92,7 +83,6 @@ public class ProjectileLauncher : MonoBehaviour
 
         Debug.Log("Preparing to launch projectile...");
 
-        // Check if projectile type is valid
         if (!projectilesDictionary.ContainsKey(projectileType))
         {
             Debug.LogError($"Projectile type '{projectileType}' is not defined.");
@@ -101,15 +91,13 @@ public class ProjectileLauncher : MonoBehaviour
 
         ProjectileSettings selectedProjectile = projectilesDictionary[projectileType];
 
-        // Validate model and launch position
         if (selectedProjectile.model == null)
         {
             Debug.LogError($"Projectile model for '{projectileType}' is missing.");
             return;
         }
 
-        // Set up left hand throwing position
-        Vector3 leftHandOffset = new Vector3(-0.3f, -0.4f, 0.2f); // Left, down, and slightly forward
+        Vector3 leftHandOffset = new Vector3(-0.3f, -0.4f, 0.2f); // Left, down, forward
         Vector3 launchPosition;
 
         if (selectedProjectile.launchPosition != null)
@@ -118,7 +106,6 @@ public class ProjectileLauncher : MonoBehaviour
         }
         else
         {
-            // Use camera-relative position to simulate left hand
             launchPosition = Camera.main.transform.position +
                             Camera.main.transform.right * leftHandOffset.x +
                             Camera.main.transform.up * leftHandOffset.y +
@@ -126,14 +113,12 @@ public class ProjectileLauncher : MonoBehaviour
             Debug.Log($"ProjectileLauncher: Using left hand throw position at {launchPosition}");
         }
 
-        // Destroy current projectile if it exists
         if (activeProjectile != null)
         {
             Debug.Log("Removing existing projectile...");
             Destroy(activeProjectile);
         }
 
-        // Instantiate new projectile at the launch position
         GameObject projectileInstance = Instantiate(
             selectedProjectile.model,
             launchPosition,
@@ -141,12 +126,10 @@ public class ProjectileLauncher : MonoBehaviour
         );
         Debug.Log("Projectile created successfully.");
 
-        // Play launch sound
         PlayLaunchSound(selectedProjectile);
 
         activeProjectile = projectileInstance;
 
-        // Ensure projectile has a Rigidbody component
         Rigidbody projectileRigidbody = activeProjectile.GetComponent<Rigidbody>();
         if (projectileRigidbody == null)
         {
@@ -168,13 +151,11 @@ public class ProjectileLauncher : MonoBehaviour
             Debug.Log($"ProjectileLauncher: Added ProximityProjectile component, target tag set to: {selectedProjectile.targetTag}");
         }
 
-        // Determine target position
         Vector3 targetPosition;
         Transform targetEntity = null;
 
         if (!gameState.EnemyActive)
         {
-            // Default target: position 4 units forward from the camera
             targetPosition = Camera.main.transform.position +
                               Camera.main.transform.forward * 4 -
                               Camera.main.transform.up * 3;
@@ -184,7 +165,6 @@ public class ProjectileLauncher : MonoBehaviour
         }
         else
         {
-            // Use assigned targetTransform when enemy is visible
             if (gameState.EnemyCoordinateTransform != null)
             {
                 selectedProjectile.targetTransform = gameState.EnemyCoordinateTransform;
@@ -197,7 +177,6 @@ public class ProjectileLauncher : MonoBehaviour
             else
             {
                 Debug.LogError("ProjectileLauncher: Cannot assign TargetTransform dynamically because GameState.Instance.EnemyCoordinateTransform is null. Creating default target instead.");
-                // Fall back to default target
                 targetPosition = Camera.main.transform.position + Camera.main.transform.forward * 4;
                 proximityHandler.defaultTargetPosition = targetPosition;
                 proximityHandler.useDefaultTarget = true;
@@ -205,46 +184,36 @@ public class ProjectileLauncher : MonoBehaviour
             }
         }
 
-        // Calculate throw trajectory for left-handed throw
         Vector3 toTarget = targetPosition - launchPosition;
         float distanceToTarget = toTarget.magnitude;
 
-        // Create a natural throwing arc based on distance
-        float arcHeight = Mathf.Max(0.5f, distanceToTarget * 0.3f); // Higher arc for farther targets
+        float arcHeight = Mathf.Max(0.5f, distanceToTarget * 0.3f);
         Vector3 launchDirection = toTarget.normalized;
 
-        // Calculate throw velocity with extra vertical component for arc
         Vector3 throwVelocity = launchDirection * selectedProjectile.forwardForce +
                               Vector3.up * (selectedProjectile.verticalForce + arcHeight);
 
-        // Apply the throwing velocity
         projectileRigidbody.linearVelocity = throwVelocity;
         Debug.Log($"ProjectileLauncher: Left hand throw velocity: {projectileRigidbody.linearVelocity} (magnitude: {projectileRigidbody.linearVelocity.magnitude})");
 
-        // Orient projectile along initial trajectory
         projectileInstance.transform.rotation = Quaternion.LookRotation(throwVelocity);
         Debug.Log($"ProjectileLauncher: Orienting projectile along throw trajectory");
 
-        // Apply spin torque for a left-handed throw (more realistic spin)
         Vector3 spinAxis = Vector3.Cross(Vector3.up, throwVelocity).normalized;
         projectileRigidbody.AddTorque(spinAxis * selectedProjectile.spinTorque, ForceMode.Impulse);
         Debug.Log($"ProjectileLauncher: Spin torque applied for left-handed throw");
 
-        // Start guidance behavior
         if (guidanceCoroutine != null)
         {
             StopCoroutine(guidanceCoroutine);
         }
         guidanceCoroutine = StartCoroutine(ApplyGuidance(projectileRigidbody, selectedProjectile, targetPosition, targetEntity));
-
-        // TODO: insert ActionWaitBar
     }
 
     private void PlayLaunchSound(ProjectileSettings projectile)
     {
         if (audioSource != null)
         {
-            // Use projectile-specific sound if available, otherwise use default
             AudioClip soundToPlay = projectile.launchSound != null ? projectile.launchSound : defaultLaunchSound;
 
             if (soundToPlay != null)
@@ -262,8 +231,6 @@ public class ProjectileLauncher : MonoBehaviour
         {
             Debug.LogError("ProjectileLauncher: No AudioSource available for playing launch sound");
         }
-
-        // ActionWaitBar.StartWait(); // 1 second wait action
     }
 
     IEnumerator ApplyGuidance(Rigidbody projectileRigidbody, ProjectileSettings settings, Vector3 initialTarget, Transform movingTarget)

@@ -10,9 +10,7 @@ public class MeleeActionManager : MonoBehaviour
     public GameObject fencingHitEffectPrefab;
     public GameObject fencingMissEffectPrefab;
 
-    // Add distance from camera for spawning miss effects
     [SerializeField] private float missEffectDistance = 10f;
-    // Add a transform to use as a spawn position for screen center effects
     [SerializeField] private Transform screenCenterTarget;
 
     void Start()
@@ -20,12 +18,10 @@ public class MeleeActionManager : MonoBehaviour
         gameState = GameState.Instance;
         gameState.gameActionOccurred.AddListener(HandleMeleeAction);
 
-        // Create screen center target if it doesn't exist
         if (screenCenterTarget == null)
         {
             GameObject targetObj = new GameObject("ScreenCenterTarget");
             screenCenterTarget = targetObj.transform;
-            // Position it in front of the camera
             PositionScreenCenterTarget();
         }
 
@@ -34,8 +30,6 @@ public class MeleeActionManager : MonoBehaviour
 
     void Update()
     {
-        // Keep the screen center target positioned correctly
-        // This ensures it stays in front of the camera even if camera moves
         if (screenCenterTarget != null)
         {
             PositionScreenCenterTarget();
@@ -64,7 +58,6 @@ public class MeleeActionManager : MonoBehaviour
     {
         Debug.Log($"MeleeActionManager: Handling action {actionType}, EnemyActive: {gameState.EnemyActive}");
 
-        // Doesn't matter if enemy is active or not, just animate
         if (actionType == "boxing")
         {
             if (gameState.EnemyActive)
@@ -119,12 +112,10 @@ public class MeleeActionManager : MonoBehaviour
             return null;
         }
 
-        // Use the screen center target transform for consistent positioning
         Vector3 spawnPosition = screenCenterTarget != null ?
             screenCenterTarget.position :
             Camera.main.transform.position + Camera.main.transform.forward * missEffectDistance;
 
-        // Add a small random offset to ensure it's not exactly at the same position
         Vector3 randomOffset = new Vector3(
             Random.Range(-0.5f, 0.5f),
             Random.Range(-0.5f, 0.5f),
@@ -133,11 +124,9 @@ public class MeleeActionManager : MonoBehaviour
 
         spawnPosition += randomOffset;
 
-        // Instantiate the prefab at the calculated position
         GameObject effectInstance = Instantiate(prefab, spawnPosition, Quaternion.identity);
         Debug.Log($"Spawned {prefab.name} at screen center position {spawnPosition}");
 
-        // Destroy the effect after the specified lifetime
         if (lifetime > 0f)
         {
             Destroy(effectInstance, lifetime);

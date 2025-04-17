@@ -5,21 +5,19 @@ using Google.XR.Cardboard;
 public class CardboardManager : MonoBehaviour
 {
     public Button launchButton;
-    public CanvasGroup debugCanvasGroup; // Add reference to the canvas group
+    public CanvasGroup debugCanvasGroup;
     private Google.XR.Cardboard.XRLoader cardboardLoader;
-    private DebuggerToggle debuggerToggle; // Reference to your DebuggerToggle script
-    public Canvas[] uiCanvases; // Assign your UI canvases in the inspector
+    private DebuggerToggle debuggerToggle;
+    public Canvas[] uiCanvases;
 
     void Start()
     {
         cardboardLoader = ScriptableObject.CreateInstance<Google.XR.Cardboard.XRLoader>();
 
-        // Try to find the DebuggerToggle script if debugCanvasGroup is assigned
         if (debugCanvasGroup != null)
         {
             debuggerToggle = debugCanvasGroup.GetComponent<DebuggerToggle>();
 
-            // If there's no DebuggerToggle on the CanvasGroup, look elsewhere
             if (debuggerToggle == null)
             {
                 debuggerToggle = FindObjectOfType<DebuggerToggle>();
@@ -34,41 +32,30 @@ public class CardboardManager : MonoBehaviour
             cardboardLoader.Initialize();
             cardboardLoader.Start();
 
-            // Hide the canvas group
             if (debugCanvasGroup != null)
             {
                 debugCanvasGroup.alpha = 0;
                 debugCanvasGroup.interactable = false;
                 debugCanvasGroup.blocksRaycasts = false;
 
-                // If we have access to the DebuggerToggle, update its state too
                 if (debuggerToggle != null && debuggerToggle.TargetCanvasGroup == debugCanvasGroup)
                 {
-                    // This keeps the internal state consistent
                     debuggerToggle.ForceHide();
                 }
             }
 
-            // Set canvases to render in world space for VR
             foreach (Canvas canvas in uiCanvases)
             {
                 canvas.renderMode = RenderMode.WorldSpace;
 
-                // Position directly in front of camera without any tilt
                 Vector3 cameraForward = Camera.main.transform.forward;
                 Vector3 cameraRight = Camera.main.transform.right;
                 Vector3 cameraUp = Camera.main.transform.up;
 
-                // Ensure we're using normalized vectors
                 cameraForward.Normalize();
-
-                // Position the canvas exactly in front of the camera
                 canvas.transform.position = Camera.main.transform.position + cameraForward * 1f;
-
-                // Make sure canvas is perfectly aligned with the camera's forward direction
                 canvas.transform.rotation = Camera.main.transform.rotation;
-                // canvas.transform.rotation = Quaternion.LookRotation(canvas.transform.position - Camera.main.transform.position);
-                canvas.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f); // Adjust scale as needed
+                canvas.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f);
             }
         }
     }
@@ -82,17 +69,14 @@ public class CardboardManager : MonoBehaviour
                 cardboardLoader.Stop();
                 cardboardLoader.Deinitialize();
 
-                // Show the canvas group again
                 if (debugCanvasGroup != null)
                 {
                     debugCanvasGroup.alpha = 1;
                     debugCanvasGroup.interactable = true;
                     debugCanvasGroup.blocksRaycasts = true;
 
-                    // If we have access to the DebuggerToggle, update its state too
                     if (debuggerToggle != null && debuggerToggle.TargetCanvasGroup == debugCanvasGroup)
                     {
-                        // This keeps the internal state consistent
                         debuggerToggle.ForceShow();
                     }
                 }

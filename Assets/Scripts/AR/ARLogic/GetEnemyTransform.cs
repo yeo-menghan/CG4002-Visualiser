@@ -7,10 +7,8 @@ public class GetEnemyTransform : MonoBehaviour
 
     void Start()
     {
-        // Get the transform of this GameObject
         gameState = GameState.Instance;
 
-        // Now you can access position, rotation, scale etc.
         Debug.Log("GetEnemyTransform: Starting Position: " + transform.position);
         Debug.Log("GetEnemyTransform: Starting Rotation: " + transform.rotation);
         Debug.Log("GetEnemyTransform: Starting Scale: " + transform.localScale);
@@ -23,7 +21,6 @@ public class GetEnemyTransform : MonoBehaviour
             return;
         }
 
-        // Register callbacks for tracking found/lost
         observerEventHandler.OnTargetFound.AddListener(OnTargetFound);
         observerEventHandler.OnTargetLost.AddListener(OnTargetLost);
 

@@ -15,11 +15,9 @@ public class TargetBehavior : MonoBehaviour
     void Start()
     {
         gameState = GameState.Instance;
-        // Cache renderers for quick access
         renderers = GetComponentsInChildren<Renderer>();
         originalColors = new Color[renderers.Length];
 
-        // Store original colors
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i].material != null)
@@ -33,26 +31,14 @@ public class TargetBehavior : MonoBehaviour
     {
         Debug.Log($"TargetBehavior: Target '{gameObject.name}' was hit!");
 
-        // Visual feedback (flash effect)
         if (flashOnHit)
         {
             FlashEffect();
-        }
-
-        // Add any other effects like animations, sound, etc.
-
-        // Notify GameManager or other systems
-
-        if (gameState != null)
-        {
-            // Optionally update game state
-            gameState.SendMessage("TargetBehavior: OnEnemyHit", SendMessageOptions.DontRequireReceiver);
         }
     }
 
     void FlashEffect()
     {
-        // Change all renderer colors to hit color
         foreach (Renderer rend in renderers)
         {
             if (rend.material != null)
@@ -61,13 +47,11 @@ public class TargetBehavior : MonoBehaviour
             }
         }
 
-        // Reset colors after flash duration
         Invoke(nameof(ResetColors), flashDuration);
     }
 
     void ResetColors()
     {
-        // Restore original colors
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i].material != null && i < originalColors.Length)

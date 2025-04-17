@@ -11,18 +11,13 @@ public class PrefabToggler : MonoBehaviour
 
     void Start()
     {
-        // Get reference to GameState
         gameState = GameState.Instance;
-
-        // Set initial state
         enemyPrefab.SetActive(true);
         shieldPrefab.SetActive(false);
-        gunPrefab.SetActive(true);
     }
 
     void Update()
     {
-        // Check if shield should be active
         bool shouldShieldBeActive = gameState.EnemyCurrentShield > 0;
         if (shouldShieldBeActive)
         {
@@ -34,6 +29,5 @@ public class PrefabToggler : MonoBehaviour
             shieldPrefab.SetActive(false);
             enemyPrefab.SetActive(true);
         }
-        gunPrefab.SetActive(true);
     }
 }

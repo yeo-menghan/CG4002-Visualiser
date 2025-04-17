@@ -22,9 +22,6 @@ public class EnemyProjectileSettings
     [Header("Targeting Parameters")]
     public string targetTag = "Target";
 
-    [Header("Left Hand Throw Settings")]
-    public Vector3 leftHandOffset = new Vector3(-0.3f, -0.4f, 0.2f); // Left, down, forward
-
     [Header("Audio Settings")]
     public AudioClip launchSound;
 }

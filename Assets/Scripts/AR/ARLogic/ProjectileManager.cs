@@ -38,7 +38,6 @@ public class ProjectileManager : MonoBehaviour
 
     public void HandleProjectile(string actionType)
     {
-        // Doesn't matter if enemy is active or not, just animate
         if (actionType == "golf")
         {
             if (projectileLauncher != null)
@@ -87,13 +86,11 @@ public class ProjectileManager : MonoBehaviour
 
     private IEnumerator DelayBombEffect()
     {
-        // Estimate time for projectile to reach target - adjust this value based on testing
         float estimatedTimeToReachTarget = 2f;
 
         Debug.Log($"ProjectileManager: Waiting {estimatedTimeToReachTarget} seconds for projectile to reach target");
         yield return new WaitForSeconds(estimatedTimeToReachTarget);
 
-        // Now spawn the bomb effect on the enemy
         bombHandler.SpawnBombOnEnemy();
         Debug.Log("ProjectileManager: Spawned snow cloud on enemy");
     }
