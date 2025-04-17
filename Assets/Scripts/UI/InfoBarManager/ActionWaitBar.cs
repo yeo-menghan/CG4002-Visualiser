@@ -7,8 +7,9 @@ public class ActionWaitBar : MonoBehaviour
     private Slider actionSlider;
     private CanvasGroup canvasGroup;
     private GameState gameState;
+    private CanvasGroup crosshairCanvasGroup; // For controlling crosshair visibility via alpha
     private bool isWaiting = false;
-    public float waitDuration = 1f;
+    public float waitDuration = 2f;
 
     // Audio components
     public AudioSource audioSource;
@@ -40,6 +41,22 @@ public class ActionWaitBar : MonoBehaviour
             Debug.Log("ActionWaitBar: AudioSource component added.");
         }
 
+        // Find and initialize the crosshair's CanvasGroup
+        GameObject crosshair = GameObject.Find("Crosshair");
+        if (crosshair != null)
+        {
+            crosshairCanvasGroup = crosshair.GetComponent<CanvasGroup>();
+            if (crosshairCanvasGroup == null)
+            {
+                crosshairCanvasGroup = crosshair.AddComponent<CanvasGroup>();
+                Debug.Log("ActionWaitBar: CanvasGroup added to crosshair.");
+            }
+        }
+        else
+        {
+            Debug.LogError("ActionWaitBar: Crosshair GameObject not found!");
+        }
+
         SetVisibility(false);
     }
 
@@ -56,6 +73,7 @@ public class ActionWaitBar : MonoBehaviour
             Debug.LogWarning("ActionWaitBar: Already waiting!");
             return;
         }
+        Debug.Log("ActionWaitBar: Starting Wait");
 
         StopAllCoroutines();
         StartCoroutine(WaitAnimation());
@@ -66,6 +84,8 @@ public class ActionWaitBar : MonoBehaviour
         isWaiting = true;
         SetVisibility(true);
         actionSlider.value = 0; // Reset the slider value
+        SetCrosshairVisibility(false); // Show the crosshair
+        Debug.Log("ActionWaitBar: Crosshair set to active");
 
         if (actionWaitSound != null && audioSource != null)
         {
@@ -86,6 +106,8 @@ public class ActionWaitBar : MonoBehaviour
         actionSlider.value = 1; // Ensure the slider is full
 
         SetVisibility(false);
+        SetCrosshairVisibility(true);
+        Debug.Log("ActionWaitBar: Crosshair set to inactive by WaitAnimation");
         isWaiting = false;
     }
 
@@ -97,5 +119,20 @@ public class ActionWaitBar : MonoBehaviour
         canvasGroup.blocksRaycasts = visible;
 
         Debug.Log($"ActionWaitBar: Visibility set to {visible}");
+    }
+
+    private void SetCrosshairVisibility(bool visible)
+    {
+        if (crosshairCanvasGroup != null)
+        {
+            crosshairCanvasGroup.alpha = visible ? 1f : 0f;
+            crosshairCanvasGroup.interactable = visible;
+            crosshairCanvasGroup.blocksRaycasts = visible;
+            Debug.Log($"ActionWaitBar: Crosshair visibility set to {visible}");
+        }
+        else
+        {
+            Debug.LogError("ActionWaitBar: Crosshair CanvasGroup is null!");
+        }
     }
 }

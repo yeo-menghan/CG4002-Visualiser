@@ -5,6 +5,7 @@ public class PrefabToggler : MonoBehaviour
 {
     public GameObject enemyPrefab;
     public GameObject shieldPrefab;
+    public GameObject gunPrefab;
 
     private GameState gameState;
 
@@ -16,6 +17,7 @@ public class PrefabToggler : MonoBehaviour
         // Set initial state
         enemyPrefab.SetActive(true);
         shieldPrefab.SetActive(false);
+        gunPrefab.SetActive(true);
     }
 
     void Update()
@@ -32,5 +34,6 @@ public class PrefabToggler : MonoBehaviour
             shieldPrefab.SetActive(false);
             enemyPrefab.SetActive(true);
         }
+        gunPrefab.SetActive(true);
     }
 }

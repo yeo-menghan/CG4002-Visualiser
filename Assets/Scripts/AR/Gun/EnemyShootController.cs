@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class ShootController : MonoBehaviour
+public class EnemyShootController : MonoBehaviour
 {
     private GameState gameState;
 
@@ -17,26 +17,30 @@ public class ShootController : MonoBehaviour
     public AudioClip impactSound;
     public float impactEffectDuration = 1.5f;
     public float bulletTravelTime = 0.3f; // Time delay before impact effect plays
+    public float impactDistanceFromCamera = 1.5f; // Distance to place impact in front of camera
 
     [Header("Recoil Settings")]
     public float recoilAmount = 0.25f;
-    public float backwardRecoilAmount = 0.1f; // Added backward recoil amount
+    public float backwardRecoilAmount = 0.1f;
     public float recoilRecoverySpeed = 5f;
     public AnimationCurve recoilCurve;
+
+    [Header("Damage Effect")]
+    public TakeDamageScript damageEffectController;
 
     private Vector3 originalPosition;
     private Quaternion originalRotation;
     private bool isRecoiling = false;
     private bool isSubscribed = false;
-    [Header("Action Wait")]
-    public ActionWaitBar actionWaitBar;
+
+    private void Awake()
+    {
+        // Get game state
+        gameState = GameState.Instance;
+    }
 
     private void Start()
     {
-        // Store original position and rotation for recoil animation
-        originalPosition = transform.localPosition;
-        originalRotation = transform.localRotation;
-
         // Get or add AudioSource
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
@@ -53,8 +57,7 @@ public class ShootController : MonoBehaviour
             Debug.LogError("Muzzle flash reference is null!");
         }
 
-        // Get game state and subscribe to events
-        gameState = GameState.Instance;
+        // Subscribe to events
         SubscribeToEvents();
     }
 
@@ -62,7 +65,7 @@ public class ShootController : MonoBehaviour
     {
         if (gameState != null && !isSubscribed)
         {
-            gameState.gameActionOccurred.AddListener(OnGameActionOccurred);
+            gameState.enemyGameActionOccurred.AddListener(OnGameActionOccurred);
             isSubscribed = true;
             Debug.Log("Subscribed to game action events");
         }
@@ -82,7 +85,7 @@ public class ShootController : MonoBehaviour
     {
         if (gameState != null && isSubscribed)
         {
-            gameState.gameActionOccurred.RemoveListener(OnGameActionOccurred);
+            gameState.enemyGameActionOccurred.RemoveListener(OnGameActionOccurred);
             isSubscribed = false;
             Debug.Log("Unsubscribed from game action events");
         }
@@ -91,12 +94,16 @@ public class ShootController : MonoBehaviour
     // Event handler for game actions
     private void OnGameActionOccurred(string actionType)
     {
-        // Check if the action is a shoot action
-        if (actionType == "gun" && gameState.PlayerBulletCount > 0)
+        // Check if the action is a shoot action and if the gun is correctly positioned
+        if (actionType == "gun" && gameState.EnemyActive && gameState.EnemyBulletCount > 0)
         {
             // Execute the shooting functionality
             FireGun();
             Debug.Log("Firing gun from action: " + actionType);
+        }
+        else
+        {
+            Debug.LogWarning("Cannot fire gun: Gun is not yet positioned on enemy");
         }
     }
 
@@ -113,27 +120,21 @@ public class ShootController : MonoBehaviour
             muzzleFlash.Play(true); // Use Play(true) to ensure it plays from the start
         }
 
-        // Check if we have an enemy target to create impact effect
-        if (gameState != null && gameState.EnemyActive && gameState.EnemyCoordinateTransform != null)
+
+        // Trigger the damage effect
+        if (damageEffectController != null && gameState.EnemyActive && gameState.PlayerHit)
         {
-            // Debug info
-            Debug.Log("Target position: " + gameState.EnemyCoordinateTransform.position);
-            Debug.Log("Muzzle position: " + muzzlePoint.position);
-
-            // Visualize the trajectory with a debug line
-            Debug.DrawLine(muzzlePoint.position, gameState.EnemyCoordinateTransform.position, Color.red, 2.0f);
-
-            // Start coroutine to play impact effect after bullet travel time
-            StartCoroutine(PlayImpactEffectDelayed(bulletTravelTime));
+            damageEffectController.StartDamageEffect();
+            Debug.Log("Started damage effect");
         }
         else
         {
-            Debug.Log("No enemy target for impact effect");
+            Debug.LogWarning("Damage effect controller reference is missing!");
         }
 
         // Trigger recoil animation
-        if (!isRecoiling)
-            StartCoroutine(RecoilAnimation());
+        // if (!isRecoiling)
+        //     StartCoroutine(RecoilAnimation());
     }
 
     private IEnumerator PlayImpactEffectDelayed(float delay)
@@ -141,21 +142,28 @@ public class ShootController : MonoBehaviour
         // Wait for the bullet to "travel" to the target
         yield return new WaitForSeconds(delay);
 
-        // Create impact effect at the enemy transform
-        if (gameState != null && gameState.EnemyActive && gameState.EnemyCoordinateTransform != null)
+        // Create impact effect in front of the AR camera
+        if (arCamera != null)
         {
-            CreateImpactEffect(gameState.EnemyCoordinateTransform.position, gameState.EnemyCoordinateTransform);
-            Debug.Log("Impact effect created at enemy position");
+            // Calculate position in front of camera
+            Vector3 impactPosition = arCamera.transform.position + arCamera.transform.forward * impactDistanceFromCamera;
+
+            // Create the impact effect
+            CreateImpactEffect(impactPosition);
+            Debug.Log("Impact effect created in front of AR Camera at: " + impactPosition);
         }
     }
 
-    private void CreateImpactEffect(Vector3 position, Transform hitTransform)
+    private void CreateImpactEffect(Vector3 position)
     {
         // Create impact effect at the hit point
         if (impactEffectPrefab != null)
         {
-            // Attach impact effect to the hit transform
-            GameObject impact = Instantiate(impactEffectPrefab, position, Quaternion.identity, hitTransform);
+            // Create impact effect
+            GameObject impact = Instantiate(impactEffectPrefab, position, Quaternion.identity);
+
+            // Orient the impact effect toward the camera
+            impact.transform.LookAt(2 * position - arCamera.transform.position);
 
             // Play impact sound if available
             if (impactSound != null && audioSource != null)
@@ -181,11 +189,11 @@ public class ShootController : MonoBehaviour
             float curveValue = recoilCurve.Evaluate(progress);
 
             // Apply recoil position and rotation with backward movement
-            // The negative Z value moves the gun backward in its local space
+            // The negative Y value moves the gun backward in its local space
             Vector3 recoilPosition = originalPosition - new Vector3(
                 0,
-                0,
-                backwardRecoilAmount * curveValue // Added backward movement
+                backwardRecoilAmount * curveValue, // Backward movement
+                0
             );
 
             // Apply both position and rotation changes
@@ -218,6 +226,5 @@ public class ShootController : MonoBehaviour
         transform.localPosition = originalPosition;
         transform.localRotation = originalRotation;
         isRecoiling = false;
-        actionWaitBar.StartWait();
     }
 }

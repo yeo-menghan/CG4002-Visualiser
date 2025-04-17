@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class BoxingGlovesController : MonoBehaviour
+public class EnemyBoxingGlovesController : MonoBehaviour
 {
     [Header("Glove References")]
     public Transform leftGlove;
@@ -25,9 +25,14 @@ public class BoxingGlovesController : MonoBehaviour
     public float effectDuration = 1.0f; // Duration before the effect is destroyed
     public AudioClip normalPunchSound;
     public AudioClip enemyHitSound;
+    public float impactDistanceFromCamera = 1.5f; // Distance to place impact in front of camera
 
-    [Header("Action Wait")]
-    public ActionWaitBar actionWaitBar;
+    [Header("AR Camera")]
+    public Camera arCamera;
+
+    [Header("Damage Effect")]
+    public TakeDamageScript damageEffectController;
+
 
     private GameState gameState;
 
@@ -43,7 +48,7 @@ public class BoxingGlovesController : MonoBehaviour
     private void Start()
     {
         gameState = GameState.Instance;
-        gameState.gameActionOccurred.AddListener(OnGameAction);
+        gameState.enemyGameActionOccurred.AddListener(OnGameAction);
 
         // Ensure glove renderers are enabled
         if (leftGlove != null)
@@ -58,19 +63,25 @@ public class BoxingGlovesController : MonoBehaviour
             if (rightRenderer) rightRenderer.enabled = true;
         }
 
+
+
         // Store initial positions and rotations
         leftGloveStartPos = leftGlove.localPosition;
         rightGloveStartPos = rightGlove.localPosition;
         leftGloveStartRot = leftGlove.localRotation;
         rightGloveStartRot = rightGlove.localRotation;
 
-        // Set offscreen positions (below camera)
-        leftGloveOffscreenPos = new Vector3(leftGloveStartPos.x, -60f, leftGloveStartPos.z);
-        rightGloveOffscreenPos = new Vector3(rightGloveStartPos.x, -60f, rightGloveStartPos.z);
+        // // Set offscreen positions (below camera)
+        // leftGloveOffscreenPos = new Vector3(leftGloveStartPos.x, -60f, leftGloveStartPos.z);
+        // rightGloveOffscreenPos = new Vector3(rightGloveStartPos.x, -60f, rightGloveStartPos.z);
 
-        // Position gloves offscreen initially
-        leftGlove.localPosition = leftGloveOffscreenPos;
-        rightGlove.localPosition = rightGloveOffscreenPos;
+        // // Position gloves offscreen initially
+        // leftGlove.localPosition = leftGloveOffscreenPos;
+        // rightGlove.localPosition = rightGloveOffscreenPos;
+
+         // Make gloves inactive initially
+        leftGlove.gameObject.SetActive(false);
+        rightGlove.gameObject.SetActive(false);
 
         // Get or add AudioSource
         audioSource = GetComponent<AudioSource>();
@@ -86,7 +97,7 @@ public class BoxingGlovesController : MonoBehaviour
         // Clean up event listener when the object is destroyed
         if (gameState != null)
         {
-            gameState.gameActionOccurred.RemoveListener(OnGameAction);
+            gameState.enemyGameActionOccurred.RemoveListener(OnGameAction);
         }
     }
 
@@ -94,7 +105,7 @@ public class BoxingGlovesController : MonoBehaviour
     private void OnGameAction(string actionType)
     {
         // Check if the action type is "boxing"
-        if (actionType == "boxing" && !isAnimating)
+        if (actionType == "boxing" && gameState.EnemyActive && !isAnimating)
         {
             Debug.Log("Boxing action received, playing sequence");
             PlayBoxingSequence();
@@ -118,22 +129,39 @@ public class BoxingGlovesController : MonoBehaviour
         isAnimating = true;
         Debug.Log("Starting boxing sequence");
 
+        // Activate gloves
+        leftGlove.gameObject.SetActive(true);
+        rightGlove.gameObject.SetActive(true);
+        Debug.Log("Gloves activated");
+
         // Move gloves into view
-        yield return StartCoroutine(MoveGlovesIn());
+        // yield return StartCoroutine(MoveGlovesIn());
 
         // Left punch
         yield return StartCoroutine(PunchGlove(leftGlove, leftGloveStartRot, leftGloveRotationAxis, true));
-
+        if(gameState.EnemyActive)
+        {
+            damageEffectController.StartDamageEffect();
+        }
         // Right punch
         yield return StartCoroutine(PunchGlove(rightGlove, rightGloveStartRot, rightGloveRotationAxis, false));
-
+        if(gameState.EnemyActive)
+        {
+            damageEffectController.StartDamageEffect();
+        }
         // Left punch again
         yield return StartCoroutine(PunchGlove(leftGlove, leftGloveStartRot, leftGloveRotationAxis, true));
+        if(gameState.EnemyActive)
+        {
+            damageEffectController.StartDamageEffect();
+        }
+        // // Move gloves out of view
+        // yield return StartCoroutine(MoveGlovesOut());
 
-        // Move gloves out of view
-        yield return StartCoroutine(MoveGlovesOut());
-
-        actionWaitBar.StartWait();
+        // Deactivate gloves after sequence
+        leftGlove.gameObject.SetActive(false);
+        rightGlove.gameObject.SetActive(false);
+        Debug.Log("Gloves deactivated");
 
         isAnimating = false;
         Debug.Log("Boxing sequence completed");
@@ -170,7 +198,7 @@ public class BoxingGlovesController : MonoBehaviour
     {
         string gloveSide = isLeft ? "Left" : "Right";
         Vector3 startPos = glove.localPosition;
-        Vector3 punchDirection = Vector3.forward;
+        Vector3 punchDirection = Vector3.up;
         Vector3 punchPos = startPos + punchDirection * punchDistance;
 
         // Calculate punch rotation
@@ -200,27 +228,28 @@ public class BoxingGlovesController : MonoBehaviour
         glove.localRotation = punchRotation;
 
         // Play sound effect
-        if (gameState.EnemyActive && gameState.EnemyCoordinateTransform != null)
+        if (gameState.EnemyActive)
         {
             // Play enemy hit sound
             audioSource.PlayOneShot(enemyHitSound);
 
             // Instantiate hit effect at enemy position with auto-destruction
-            GameObject effect = Instantiate(punchEffect, gameState.EnemyCoordinateTransform.position, Quaternion.identity);
+            // Vector3 impactPosition = arCamera.transform.position + arCamera.transform.forward * impactDistanceFromCamera;
+            // GameObject effect = Instantiate(punchEffect, impactPosition, Quaternion.identity);
 
-            // Make sure the effect doesn't loop and gets destroyed after a set time
-            ParticleSystem particleSystem = effect.GetComponent<ParticleSystem>();
-            if (particleSystem != null)
-            {
-                // Make the particle system non-looping
-                var main = particleSystem.main;
-                main.loop = false;
-            }
+            // // Make sure the effect doesn't loop and gets destroyed after a set time
+            // ParticleSystem particleSystem = effect.GetComponent<ParticleSystem>();
+            // if (particleSystem != null)
+            // {
+            //     // Make the particle system non-looping
+            //     var main = particleSystem.main;
+            //     main.loop = false;
+            // }
 
-            // Destroy the effect after a set duration
-            Destroy(effect, effectDuration);
+            // // Destroy the effect after a set duration
+            // Destroy(effect, effectDuration);
 
-            Debug.Log("Created hit effect at enemy position, set to destroy in " + effectDuration + " seconds");
+            // Debug.Log("Created hit effect at enemy position, set to destroy in " + effectDuration + " seconds");
         }
         else
         {

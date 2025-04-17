@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class FencingController : MonoBehaviour
+public class EnemyFencingController : MonoBehaviour
 {
     [Header("Sword Reference")]
     public Transform sword;
@@ -18,16 +18,20 @@ public class FencingController : MonoBehaviour
 
     [Header("Jab Motion Settings")]
     public float jabRotationAngle = 15f; // Rotation angle in degrees
-    public Vector3 swordRotationAxis = new Vector3(0, 0, -1); // Negative Z-axis rotation for opposite direction
+    public Vector3 swordRotationAxis = new Vector3(1, 0, 0);
 
     [Header("Effect Settings")]
     public GameObject slashEffect;
     public float effectDuration = 1.0f; // Duration before the effect is destroyed
     public AudioClip normalSlashSound;
     public AudioClip enemyHitSound;
+    public float impactDistanceFromCamera = 1.5f; // Distance to place impact in front of camera
 
-    [Header("Action Wait")]
-    public ActionWaitBar actionWaitBar;
+    [Header("AR Camera")]
+    public Camera arCamera;
+
+    [Header("Damage Effect")]
+    public TakeDamageScript damageEffectController;
 
     private GameState gameState;
 
@@ -40,7 +44,7 @@ public class FencingController : MonoBehaviour
     private void Start()
     {
         gameState = GameState.Instance;
-        gameState.gameActionOccurred.AddListener(OnGameAction);
+        gameState.enemyGameActionOccurred.AddListener(OnGameAction);
 
         // Ensure sword renderer is enabled
         if (sword != null)
@@ -53,11 +57,14 @@ public class FencingController : MonoBehaviour
         swordStartPos = sword.localPosition;
         swordStartRot = sword.localRotation;
 
-        // Set offscreen position (bottom of screen)
-        swordOffscreenPos = new Vector3(swordStartPos.x, -60f, swordStartPos.z);
+        // Set sword inactive initially
+        sword.gameObject.SetActive(false);
 
-        // Position sword offscreen initially
-        sword.localPosition = swordOffscreenPos;
+        // // Set offscreen position (bottom of screen)
+        // swordOffscreenPos = new Vector3(swordStartPos.x, -60f, swordStartPos.z);
+
+        // // Position sword offscreen initially
+        // sword.localPosition = swordOffscreenPos;
 
         // Get or add AudioSource
         audioSource = GetComponent<AudioSource>();
@@ -73,7 +80,7 @@ public class FencingController : MonoBehaviour
         // Clean up event listener when the object is destroyed
         if (gameState != null)
         {
-            gameState.gameActionOccurred.RemoveListener(OnGameAction);
+            gameState.enemyGameActionOccurred.RemoveListener(OnGameAction);
         }
     }
 
@@ -81,7 +88,7 @@ public class FencingController : MonoBehaviour
     private void OnGameAction(string actionType)
     {
         // Check if the action type is "sword"
-        if (actionType == "fencing" && !isAnimating)
+        if (actionType == "fencing" && gameState.EnemyActive && !isAnimating)
         {
             Debug.Log("Fencing action received, playing sequence");
             PlaySwordSequence();
@@ -104,20 +111,30 @@ public class FencingController : MonoBehaviour
     {
         isAnimating = true;
         Debug.Log("Starting sword sequence");
+        sword.gameObject.SetActive(true);
+        Debug.Log("Sword activated");
 
         // Move sword into view
-        yield return StartCoroutine(MoveSwordIn());
+        // yield return StartCoroutine(MoveSwordIn());
 
         // First jab (shorter)
         yield return StartCoroutine(JabSword(firstJabDuration, firstJabDistance));
-
+        if(gameState.EnemyActive)
+        {
+            damageEffectController.StartDamageEffect();
+        }
         // Second jab (longer)
         yield return StartCoroutine(JabSword(secondJabDuration, secondJabDistance));
-
+        if(gameState.EnemyActive)
+        {
+            damageEffectController.StartDamageEffect();
+        }
         // Move sword out of view
-        yield return StartCoroutine(MoveSwordOut());
+        // yield return StartCoroutine(MoveSwordOut());
 
-        actionWaitBar.StartWait();
+        // Deactivate sword after sequence
+        sword.gameObject.SetActive(false);
+        Debug.Log("Sword deactivated");
 
         isAnimating = false;
         Debug.Log("Sword sequence completed");
@@ -150,7 +167,7 @@ public class FencingController : MonoBehaviour
     private IEnumerator JabSword(float jabDuration, float jabDistance)
     {
         Vector3 startPos = sword.localPosition;
-        Vector3 jabDirection = Vector3.forward;
+        Vector3 jabDirection = Vector3.up;
         Vector3 jabPos = startPos + jabDirection * jabDistance;
 
         // Calculate jab rotation - now in the opposite direction with negative angle
@@ -180,27 +197,28 @@ public class FencingController : MonoBehaviour
         sword.localRotation = jabRotation;
 
         // Play sound effect and create slash effect
-        if (gameState.EnemyActive && gameState.EnemyCoordinateTransform != null)
+        if (gameState.EnemyActive)
         {
             // Play enemy hit sound
             audioSource.PlayOneShot(enemyHitSound);
 
-            // Instantiate hit effect at enemy position with auto-destruction
-            GameObject effect = Instantiate(slashEffect, gameState.EnemyCoordinateTransform.position, Quaternion.identity);
+            // // Instantiate hit effect at enemy position with auto-destruction
+            // Vector3 impactPosition = arCamera.transform.position + arCamera.transform.forward * impactDistanceFromCamera;
+            // GameObject effect = Instantiate(slashEffect, impactPosition, Quaternion.identity);
 
-            // Make sure the effect doesn't loop and gets destroyed after a set time
-            ParticleSystem particleSystem = effect.GetComponent<ParticleSystem>();
-            if (particleSystem != null)
-            {
-                // Make the particle system non-looping
-                var main = particleSystem.main;
-                main.loop = false;
-            }
+            // // Make sure the effect doesn't loop and gets destroyed after a set time
+            // ParticleSystem particleSystem = effect.GetComponent<ParticleSystem>();
+            // if (particleSystem != null)
+            // {
+            //     // Make the particle system non-looping
+            //     var main = particleSystem.main;
+            //     main.loop = false;
+            // }
 
-            // Destroy the effect after a set duration
-            Destroy(effect, effectDuration);
+            // // Destroy the effect after a set duration
+            // Destroy(effect, effectDuration);
 
-            Debug.Log("Created slash effect at enemy position, set to destroy in " + effectDuration + " seconds");
+            // Debug.Log("Created slash effect at enemy position, set to destroy in " + effectDuration + " seconds");
         }
         else
         {

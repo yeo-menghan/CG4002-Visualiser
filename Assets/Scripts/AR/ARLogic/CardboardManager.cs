@@ -53,6 +53,7 @@ public class CardboardManager : MonoBehaviour
             foreach (Canvas canvas in uiCanvases)
             {
                 canvas.renderMode = RenderMode.WorldSpace;
+
                 // Position directly in front of camera without any tilt
                 Vector3 cameraForward = Camera.main.transform.forward;
                 Vector3 cameraRight = Camera.main.transform.right;
@@ -62,12 +63,12 @@ public class CardboardManager : MonoBehaviour
                 cameraForward.Normalize();
 
                 // Position the canvas exactly in front of the camera
-                canvas.transform.position = Camera.main.transform.position + cameraForward * 2f;
+                canvas.transform.position = Camera.main.transform.position + cameraForward * 1f;
 
                 // Make sure canvas is perfectly aligned with the camera's forward direction
                 canvas.transform.rotation = Camera.main.transform.rotation;
                 // canvas.transform.rotation = Quaternion.LookRotation(canvas.transform.position - Camera.main.transform.position);
-                canvas.transform.localScale = new Vector3(0.001f, 0.001f, 0.001f); // Adjust scale as needed
+                canvas.transform.localScale = new Vector3(0.0005f, 0.0005f, 0.0005f); // Adjust scale as needed
             }
         }
     }

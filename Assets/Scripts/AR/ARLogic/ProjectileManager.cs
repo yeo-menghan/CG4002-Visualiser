@@ -6,17 +6,13 @@ public class ProjectileManager : MonoBehaviour
     private GameState gameState;
     public ProjectileLauncher projectileLauncher;
     public PlayerBombHandler bombHandler;
+    public ActionWaitBar actionWaitBar;
 
     void Start()
     {
         gameState = GameState.Instance;
         gameState.gameActionOccurred.AddListener(HandleProjectile);
         Debug.Log("ProjectileManager: ProjectileManager Ready");
-        if (projectileLauncher == null)
-        {
-            Debug.LogError("ProjectileManager: ProjectileLauncher is not assigned. Please assign it in the Inspector.");
-        }
-
         if (projectileLauncher == null)
         {
             Debug.LogError("ProjectileManager: ProjectileLauncher is not assigned. Please assign it in the Inspector.");
@@ -51,6 +47,8 @@ public class ProjectileManager : MonoBehaviour
                 projectileLauncher.FireProjectile("Golf");
                 Debug.Log("ProjectileManager: Fired Golf Projectile");
             }
+            StartCoroutine(DelayWaitAction());
+            Debug.Log("ProjectileManager: Delay Wait Golf Projectile");
         }
         else if (actionType == "badminton")
         {
@@ -59,6 +57,8 @@ public class ProjectileManager : MonoBehaviour
                 projectileLauncher.FireProjectile("Badminton");
                 Debug.Log("ProjectileManager: Fired Badminton Projectile");
             }
+            StartCoroutine(DelayWaitAction());
+            Debug.Log("ProjectileManager: Delay Wait Badminton Projectile");
         }
         else if (actionType == "bomb")
         {
@@ -76,6 +76,8 @@ public class ProjectileManager : MonoBehaviour
             {
                 Debug.Log("ProjectileManager: Cannot fire bomb - no bombs available, no active enemy, or missing bomb handler");
             }
+
+            StartCoroutine(DelayWaitAction());
         }
         else
         {
@@ -94,5 +96,15 @@ public class ProjectileManager : MonoBehaviour
         // Now spawn the bomb effect on the enemy
         bombHandler.SpawnBombOnEnemy();
         Debug.Log("ProjectileManager: Spawned snow cloud on enemy");
+    }
+
+    private IEnumerator DelayWaitAction()
+    {
+        float estimatedTimeToReachTarget = 2f;
+
+        Debug.Log($"ProjectileManager: Waiting {estimatedTimeToReachTarget} seconds for projectile to reach target");
+        yield return new WaitForSeconds(estimatedTimeToReachTarget);
+
+        actionWaitBar.StartWait();
     }
 }

@@ -38,22 +38,27 @@ public class GameState : MonoBehaviour
     // Enemy Stats
     private int enemyCurrentHealth, enemyCurrentShield, enemyScore, enemyShieldCount, enemyBulletCount, enemyBombCount;
     private int enemyInBombCount;
-    private bool enemyActive, enemyHit, enemyShieldHit;
+    private bool enemyActive, enemyHit;
     private Transform enemyCoordinateTransform;
     private Dictionary<int, Vector3> activeEnemyBombs = new Dictionary<int, Vector3>();
     private int nextEnemyBombId = 0;
 
+    // World Anchor
+    private Transform worldCoordinateTransform;
+
     // Comms
-    private bool mqConnected, actionQueueConnected, statusUpdateConnected, predictionConnected;
+    private bool mqConnected, actionQueueConnected, statusUpdateConnected;
 
     // Events for property changes
     public event Action EnemyActiveChanged; // Enemy Visibility
+
+    // Device Connection
+    private bool p1_glove, p2_glove, p1_vest, p2_vest, p1_gun, p2_gun;
 
     // Events for playing hit animations
     public event Action PlayerHitEvent;
     public event Action PlayerShieldHitEvent;
     public event Action EnemyHitEvent;
-    public event Action EnemyShieldHitEvent;
 
     // UnityEvent for game actions
     public UnityActionEvent gameActionOccurred;
@@ -61,8 +66,9 @@ public class GameState : MonoBehaviour
     // UnityEvent for enemy game actions
     public UnityActionEvent enemyGameActionOccurred;
 
-    // UnityEvent for received predictions
-    public UnityPredictionEvent predictionOccurred;
+    // Event to notify subscribers when device status changes
+    public event Action OnDeviceStatusChanged;
+
 
     void Awake()
     {
@@ -104,7 +110,14 @@ public class GameState : MonoBehaviour
         mqConnected = false;
         actionQueueConnected = false;
         statusUpdateConnected = false;
-        predictionConnected = false;
+
+        // Device Connection
+        p1_glove = false;
+        p2_glove = false;
+        p1_vest = false;
+        p2_vest = false;
+        p1_gun = false;
+        p2_gun = false;
     }
 
     // =============================
@@ -129,10 +142,44 @@ public class GameState : MonoBehaviour
         set { statusUpdateConnected = value; }
     }
 
-    public bool PredictionConnected
+    // =============================
+    // Device Connection Methods
+    // =============================
+
+    public bool P1_glove
     {
-        get { return predictionConnected; }
-        set { predictionConnected = value; }
+        get { return p1_glove; }
+        set { p1_glove = value; }
+    }
+
+    public bool P2_glove
+    {
+        get { return p2_glove; }
+        set { p2_glove = value; }
+    }
+
+    public bool P1_vest
+    {
+        get { return p1_vest; }
+        set { p1_vest = value; }
+    }
+
+    public bool P2_vest
+    {
+        get { return p2_vest; }
+        set { p2_vest = value; }
+    }
+
+    public bool P1_gun
+    {
+        get { return p1_gun; }
+        set { p1_gun = value; }
+    }
+
+    public bool P2_gun
+    {
+        get { return p2_gun; }
+        set { p2_gun = value; }
     }
 
     // =============================
@@ -180,19 +227,6 @@ public class GameState : MonoBehaviour
             if (enemyHit)
             {
                 EnemyHitEvent?.Invoke();
-            }
-        }
-    }
-
-    public bool EnemyShieldHit
-    {
-        get { return enemyShieldHit; }
-        set
-        {
-            enemyShieldHit = value;
-            if (enemyShieldHit)
-            {
-                EnemyShieldHitEvent?.Invoke();
             }
         }
     }
@@ -293,6 +327,12 @@ public class GameState : MonoBehaviour
       set { enemyCoordinateTransform = value; }
     }
 
+    public Transform WorldCoordinateTransform
+    {
+        get { return worldCoordinateTransform; }
+        set { worldCoordinateTransform = value; }
+    }
+
     public int PlayerInBombCount
     {
         get { return playerInBombCount; }
@@ -327,16 +367,36 @@ public class GameState : MonoBehaviour
     // Method to update the count of bombs the enemy is inside
     public void UpdateEnemyInBombCount()
     {
-        if (enemyCoordinateTransform == null) return;
+        if (enemyCoordinateTransform == null)
+        {
+            EnemyInBombCount = 0;
+            return;
+        }
 
         int count = 0;
         Vector3 enemyPosition = enemyCoordinateTransform.position;
+        Debug.Log($"GameState: EnemyInBombCount, enemyPosition - {enemyPosition}");
+
+        Vector2 enemyPosXZ = new Vector2(enemyPosition.x, enemyPosition.z);
+        const float horizontalThreshold = 1.0f; // Define the threshold
 
         foreach (Vector3 bombPosition in activeEnemyBombs.Values)
         {
-            if (Vector3.Distance(enemyPosition, bombPosition) <= 1.0f)
+            Vector2 bombPosXZ = new Vector2(bombPosition.x, bombPosition.z);
+            Debug.Log($"GameState: bombPosXZ {bombPosXZ}");
+            float horizontalDistance = Vector2.Distance(enemyPosXZ, bombPosXZ);
+            Debug.Log($"GameState: Enemy Horizontal Distance {horizontalDistance}");
+
+            // if (Vector3.Distance(enemyPosition, bombPosition) <= 1.0f)
+            // {
+            //     count++;
+            // }
+
+            if (horizontalDistance <= horizontalThreshold)
             {
                 count++;
+                // Optional: Log which bomb is close
+                // Debug.Log($"GameState: Bomb at {bombPosition} is within horizontal distance {horizontalThreshold} of enemy at {enemyPosition}");
             }
         }
 
@@ -413,18 +473,17 @@ public class GameState : MonoBehaviour
       Debug.Log($"Enemy game action occurred: {actionType}");
     }
 
-    // Method to handle game predictions sent
-    public void HandlePredictionMessage(string predictionType, float predictionValue)
-    {
-      Debug.Log($"HandleGamePrediction called with predictionType: {predictionType} and predictionValue: {predictionValue}");
-      predictionOccurred.Invoke(predictionType, predictionValue);
-      Debug.Log($"Game prediction occurred: {predictionType} with value: {predictionValue}");
-    }
-
     // UnityEvent for game actions
     [System.Serializable]
     public class UnityActionEvent : UnityEvent<string> { }
 
-    [System.Serializable]
-    public class UnityPredictionEvent : UnityEvent<string, float> { }
+    // Method to be called by MQTTCommsManager when new status is received
+    public void NotifyDeviceStatusChanged()
+    {
+        Debug.Log("GameState: Notifying subscribers of device status change.");
+        // Use the null-conditional operator ?. to safely invoke the event
+        // This checks if OnDeviceStatusChanged is not null before calling Invoke()
+        OnDeviceStatusChanged?.Invoke();
+    }
+
 }
