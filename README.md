@@ -84,6 +84,10 @@ When a snow bomb projectile strikes an opponent, it generates a snowfall zone wi
 
 This project is designed for iOS and is not currently available on the App Store. If you would like access to the project files, please reach out to the project owner.
 
+## Contributing
+
+For more information, please refer to our [developer's guide](./docs/DeveloperGuide.md)
+
 ## Credits
 - Pixabay for sound effects
 - Sketchfab and Unity Asset Store for in-game prefabs

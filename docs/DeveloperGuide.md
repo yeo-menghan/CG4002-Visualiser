@@ -1,4 +1,4 @@
-# Visusaliser Developer Guide
+# Visualiser Developer Guide
 This document outlines the game mechanics and architecture of the Unity AR Laser Tag Game Visualiser application.
 The visualiser takes in information given by the External Comms component via MQTT and outputs the relevant game action effect and updates the game state (health, shield and ammo).
 This developer guide serves to provide sufficient information for contributers.
